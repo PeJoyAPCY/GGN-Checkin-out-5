@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GGN Check-in/Check-out</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      background-color: #fdf5f7;
+      color: #400000;
+    }
+    h2 {
+      text-align: center;
+      color: #800000;
+      margin-bottom: 15px;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: auto;
+      margin-bottom: 10px;
+      background-color: #ddd;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: #555;
+    }
+    label {
+      margin-right: 15px;
+      font-weight: bold;
+    }
+    input[type="radio"] {
+      margin-right: 5px;
+    }
+    input[type="file"],
+    textarea,
+    input[type="text"],
+    button {
+      width: 100%;
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #800000;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #a00000;
+    }
+    #previewText {
+      background: #fff5f5;
+      border: 1px solid #d9b3b3;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-size: 15px;
+      margin-top: 10px;
+    }
+    #previewContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #previewContainer img {
+      width: 120px;
+      height: 160px;
+      object-fit: cover;
+      border: 2px solid #800000;
+      border-radius: 6px;
+    }
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+      color: #800000;
+    }
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="https://img2.pic.in.th/pic/logo-ggn.png" alt="โลโก้" style="width: 100%; height: 100%; object-fit: contain;" />
+  </div>
+
+  <h2>📷 ระบบ Check in / Check out</h2>
+
+  <div>
+    <label><input type="radio" name="jobType" value="Check in"> Check in</label>
+    <label><input type="radio" name="jobType" value="Check out"> Check out</label>
+  </div>
+
+  <input type="text" id="fullname" placeholder="ชื่อ-นามสกุล (บังคับกรอก)" />
+  <textarea id="text" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
+  <div id="previewText"></div>
+  <input type="file" id="imageInput" accept="image/jpeg,image/png" multiple />
+  <button id="sendBtn">ส่งภาพและ Log เข้า Telegram</button>
+
+  <div id="previewContainer"></div>
+  <div id="status"></div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const botToken = "7553856757:AAEWZvVH-JLWOXeFCi-qt_ejs32jFlvW_gw";
+    const chatId = "-4707922324";
+
+    const imageInput = document.getElementById("imageInput");
+    const previewContainer = document.getElementById("previewContainer");
+    const previewText = document.getElementById("previewText");
+    const extraText = document.getElementById("text");
+    const fullname = document.getElementById("fullname");
+    const status = document.getElementById("status");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let photos = [];
+    let processedPhotos = [];
+
+    function getSelectedJob() {
+      const selected = document.querySelector('input[name="jobType"]:checked');
+      return selected ? selected.value : "";
+    }
+
+    imageInput.addEventListener("change", (e) => {
+      photos = Array.from(e.target.files).filter(file => {
+        if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+          alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
+          return false;
+        }
+        return true;
+      });
+      updatePreview();
+    });
+
+    function updatePreview() {
+      previewContainer.innerHTML = "";
+      photos.forEach(file => {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        previewContainer.appendChild(img);
+      });
+    }
+
+    function updatePreviewText() {
+      const job = getSelectedJob() || "-";
+      const extra = extraText.value.trim();
+      const name = fullname.value.trim() || "-";
+      const nowStr = new Date().toLocaleString("th-TH");
+      previewText.textContent =
+        `📅 ${nowStr}\n👤 ชื่อ: ${name}\n📌 งาน: ${job}${extra ? `\n📝 ${extra}` : ""}`;
+    }
+
+    extraText.addEventListener("input", updatePreviewText);
+    fullname.addEventListener("input", updatePreviewText);
+    document.querySelectorAll('input[name="jobType"]').forEach(el => {
+      el.addEventListener("change", updatePreviewText);
+    });
+
+    async function processImage(file) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    async function sendToTelegram() {
+      const name = fullname.value.trim();
+      const job = getSelectedJob();
+      const extraMsg = extraText.value.trim();
+
+      if (!name) {
+        alert("กรุณากรอกชื่อ-นามสกุล");
+        fullname.focus();
+        return;
+      }
+
+      if (/\d/.test(name)) {
+        alert("ห้ามกรอกตัวเลขในชื่อ-นามสกุล");
+        fullname.focus();
+        return;
+      }
+
+      if (!job) {
+        alert("กรุณาเลือกประเภทงาน");
+        return;
+      }
+
+      if (photos.length === 0) {
+        alert("กรุณาเลือกรูปภาพ");
+        return;
+      }
+
+      updatePreviewText(); // อัปเดตข้อความก่อนส่ง
+      const caption = previewText.textContent;
+      const nowStr = new Date().toLocaleString("th-TH");
+      processedPhotos = [];
+
+      for (let i = 0; i < photos.length; i++) {
+        const blob = await processImage(photos[i]);
+        const form = new FormData();
+        form.append("chat_id", chatId);
+        form.append("photo", blob, `photo${i + 1}.jpg`);
+        form.append("caption", caption);
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: "POST",
+          body: form
+        });
+
+        processedPhotos.push({ i: i + 1, nowStr, name, job, extraMsg });
+      }
+
+      const wb = XLSX.utils.book_new();
+      const data = [["ลำดับ", "วันเวลา", "ชื่อ", "ประเภทงาน", "ข้อความ"]];
+      processedPhotos.forEach(p =>
+        data.push([p.i, p.nowStr, p.name, p.job, p.extraMsg])
+      );
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "Log");
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const excelBlob = new Blob([wbout], { type: "application/octet-stream" });
+
+      const logForm = new FormData();
+      logForm.append("chat_id", chatId);
+      logForm.append("document", excelBlob, "log.xlsx");
+
+      await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+        method: "POST",
+        body: logForm
+      });
+
+      status.textContent = "✅ ส่งภาพและ log สำเร็จแล้ว!";
+      photos = [];
+      updatePreview();
+      previewText.textContent = "";
+      extraText.value = "";
+      fullname.value = "";
+      document.querySelectorAll('input[name="jobType"]').forEach(el => el.checked = false);
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendToTelegram);
+  </script>
+</body>
+</html>
