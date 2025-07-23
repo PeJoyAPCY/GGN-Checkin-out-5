@@ -14,32 +14,47 @@
       background-color: #fdf5f7;
       color: #400000;
     }
-    h2 {
-      text-align: center;
-      color: #800000;
-      margin-bottom: 15px;
-    }
+
     .logo {
-      width: 80px;
-      height: 80px;
-      margin: auto;
-      margin-bottom: 10px;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 10px;
       background-color: #ddd;
       border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: bold;
-      font-size: 14px;
-      color: #555;
+      overflow: hidden;
     }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .zone-title {
+      margin: 0;
+      font-size: 22px;
+      color: #800000;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+
+    .system-title {
+      margin: 0;
+      font-size: 18px;
+      color: #800000;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
     label {
       margin-right: 15px;
       font-weight: bold;
     }
+
     input[type="radio"] {
       margin-right: 5px;
     }
+
     input[type="file"],
     textarea,
     input[type="text"],
@@ -52,6 +67,7 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
+
     button {
       background-color: #800000;
       color: white;
@@ -60,9 +76,11 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
+
     button:hover {
       background-color: #a00000;
     }
+
     #previewText {
       background: #fff5f5;
       border: 1px solid #d9b3b3;
@@ -71,6 +89,7 @@
       font-size: 15px;
       margin-top: 10px;
     }
+
     #previewContainer {
       display: flex;
       flex-wrap: wrap;
@@ -78,6 +97,7 @@
       justify-content: center;
       margin-top: 10px;
     }
+
     #previewContainer img {
       width: 120px;
       height: 160px;
@@ -85,12 +105,14 @@
       border: 2px solid #800000;
       border-radius: 6px;
     }
+
     #status {
       margin-top: 10px;
       font-weight: bold;
       text-align: center;
       color: #800000;
     }
+
     canvas {
       display: none;
     }
@@ -99,10 +121,11 @@
 <body>
 
   <div class="logo">
-    <img src="https://img2.pic.in.th/pic/logo-ggn.png" alt="โลโก้" style="width: 100%; height: 100%; object-fit: contain;" />
+    <img src="https://img2.pic.in.th/pic/logo-ggn.png" alt="โลโก้" />
   </div>
 
-  <h2>📷 ระบบ Check in / Check out</h2>
+  <h2 class="zone-title">เขต ขอนแก่น</h2>
+  <h2 class="system-title">📷 ระบบ Check in / Check out</h2>
 
   <div>
     <label><input type="radio" name="jobType" value="Check in"> Check in</label>
