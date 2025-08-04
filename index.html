@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>GGN Check-in/Check-out</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, sans-serif;
@@ -136,7 +135,7 @@
   <textarea id="text" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
   <div id="previewText"></div>
   <input type="file" id="imageInput" accept="image/jpeg,image/png" multiple />
-  <button id="sendBtn">ส่งภาพและ Log เข้า Telegram</button>
+  <button id="sendBtn">ส่งภาพเข้า Telegram</button>
 
   <div id="previewContainer"></div>
   <div id="status"></div>
@@ -156,7 +155,6 @@
     const ctx = canvas.getContext("2d");
 
     let photos = [];
-    let processedPhotos = [];
 
     function getSelectedJob() {
       const selected = document.querySelector('input[name="jobType"]:checked');
@@ -239,10 +237,8 @@
         return;
       }
 
-      updatePreviewText(); // อัปเดตข้อความก่อนส่ง
+      updatePreviewText();
       const caption = previewText.textContent;
-      const nowStr = new Date().toLocaleString("th-TH");
-      processedPhotos = [];
 
       for (let i = 0; i < photos.length; i++) {
         const blob = await processImage(photos[i]);
@@ -255,30 +251,9 @@
           method: "POST",
           body: form
         });
-
-        processedPhotos.push({ i: i + 1, nowStr, name, job, extraMsg });
       }
 
-      const wb = XLSX.utils.book_new();
-      const data = [["ลำดับ", "วันเวลา", "ชื่อ", "ประเภทงาน", "ข้อความ"]];
-      processedPhotos.forEach(p =>
-        data.push([p.i, p.nowStr, p.name, p.job, p.extraMsg])
-      );
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, "Log");
-      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      const excelBlob = new Blob([wbout], { type: "application/octet-stream" });
-
-      const logForm = new FormData();
-      logForm.append("chat_id", chatId);
-      logForm.append("document", excelBlob, "log.xlsx");
-
-      await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
-        method: "POST",
-        body: logForm
-      });
-
-      status.textContent = "✅ ส่งภาพและ log สำเร็จแล้ว!";
+      status.textContent = "✅ ส่งภาพสำเร็จแล้ว!";
       photos = [];
       updatePreview();
       previewText.textContent = "";
